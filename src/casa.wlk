@@ -1,164 +1,198 @@
 // LA CASA DE PEPE Y JULIAN
-
 object casaDePepeYJulian {
-	
+
 	var viveres = 50
-	var necesitaReparaciones = false
+	var gastoEnReparaciones = 0
+	var property estrategiaDeAhorro = full
+
+	method viveres() {
+		return viveres
+	}
 
 	method viveresSuficientes() {
-		return viveres > 40
-	}
-	
-	method viveres() {
-		return viveres 
-	}
-	
-	method viveres(_viveres) {
-		viveres = _viveres
-	}
-	
-	method comprarViveres(_porcentajeAComprar) {
-		viveres += _porcentajeAComprar
+		return self.viveres() > 40
 	}
 
 	method necesitaReparaciones() {
-		return necesitaReparaciones
+		return gastoEnReparaciones > 0
 	}
-	
-	method necesitaReparaciones(_necesitaReparaciones) {
-		necesitaReparaciones = _necesitaReparaciones
-	}	
-		
+
+	method gastoEnReparaciones(_gastoEnReparaciones) {
+		gastoEnReparaciones = _gastoEnReparaciones
+	}
+
+	method gastoEnReparaciones() {
+		return gastoEnReparaciones
+	}
+
 	method estaEnOrden() {
-		return self.viveresSuficientes() and self.necesitaReparaciones()
+		return self.viveresSuficientes() and not self.necesitaReparaciones()
 	}
+
+	method mantenerLaCasa() {
+		self.estrategiaDeAhorro().realizarMantenimiento()
+	}
+
+	method comprarViveres(porcentaje) {
+		viveres += porcentaje
+		cuentasDePepeYJulian.extraerParaGastos(self.gastoEnViveres(porcentaje))
+	}
+
+	method gastoEnViveres(porcentaje) {
+		return porcentaje * self.estrategiaDeAhorro().calidad()
+	}
+
+	method pagarReparaciones() {
+		cuentasDePepeYJulian.extraerParaGastos(gastoEnReparaciones)
+		gastoEnReparaciones = 0
+	}
+
 }
 
 // CUENTA PEPE Y JULIAN
+object cuentasDePepeYJulian {
 
-object cuentasPepeYJulian {
-	
-	var cuentaAsignada = cuentaCorriente
-	
-	method cuentaAsignada(_cuentaAsignada) {
-		cuentaAsignada = _cuentaAsignada
+	var cuentaParaGastos = cuentaCorriente
+
+	method cuentaParaGastos(_cuentaParaGastos) {
+		cuentaParaGastos = _cuentaParaGastos
 	}
-	
-	method cuentaAsignada() {
-		return cuentaAsignada
+
+	method cuentaParaGastos() {
+		return cuentaParaGastos
 	}
-	
+
 	method extraerParaGastos(_dinero) {
-		cuentaAsignada.extraer(_dinero)
+		self.cuentaParaGastos().extraer(_dinero)
 	}
-	
+
+	method depositarParaGastos(_dinero) {
+		self.cuentaParaGastos().depositar(_dinero)
+	}
+
 }
 
 // CUENTAS BANCARIAS
-
 object cuentaCorriente {
-	
-	var saldo = 0
-	
-	method saldo() {
-		return saldo
-	}
-	
-	method saldo(_saldo) {
-		saldo = _saldo
-	}
-	
-	method depositar(_dinero) {
-		saldo += _dinero
-	}
-	
-	method extraer(_dinero) {
-		saldo -= _dinero
-	}
-	
-}
-	
-object cuentaConGastos {
 
-	var saldo = 0
-	var costoOperacion = 0
-	
-	method saldo() {
-		return saldo
+	var dinero = 0
+
+	method dinero() {
+		return dinero
 	}
-	
+
+	method dinero(_dinero) {
+		dinero = _dinero
+	}
+
 	method depositar(_dinero) {
-		saldo += _dinero - costoOperacion
+		dinero += _dinero
 	}
-	
-	method costoOperacion(_costoOperacion) {
-		costoOperacion = _costoOperacion
-	}	
-	
+
 	method extraer(_dinero) {
-		saldo -= _dinero
+		dinero -= _dinero
 	}
-	
+
+}
+
+object cuentaGastos {
+
+	var dinero = 0
+	var property costoDeOperacion = 0
+
+	method dinero() {
+		return dinero
+	}
+
+	method dinero(_dinero) {
+		dinero = _dinero
+	}
+
+	method depositar(_dinero) {
+		dinero += (_dinero - costoDeOperacion)
+	}
+
+	method extraer(_dinero) {
+		dinero -= _dinero
+	}
+
 }
 
 object cuentaCombinada {
-	
+
 	var cuentaPrimaria = cuentaCorriente
-	var cuentaSecundaria = cuentaCorriente
-	
-	method saldo() {
-		return cuentaPrimaria.saldo() + cuentaSecundaria.saldo()
+	var cuentaSecundaria = cuentaGastos
+
+	method dinero() {
+		return cuentaPrimaria.dinero() + cuentaSecundaria.dinero()
 	}
-	
+
 	method cuentaPrimaria(_cuentaPrimaria) {
 		cuentaPrimaria = _cuentaPrimaria
 	}
-	
+
 	method cuentaSecundaria(_cuentaSecundaria) {
 		cuentaSecundaria = _cuentaSecundaria
 	}
-	
+
 	method depositar(_dinero) {
 		cuentaPrimaria.depositar(_dinero)
 	}
-	
+
 	method extraer(_dinero) {
-		if (cuentaPrimaria.saldo() >= _dinero) {
+		if (cuentaPrimaria.dinero() >= _dinero) {
 			cuentaPrimaria.extraer(_dinero)
-		}
-		else {
+		} else {
 			cuentaSecundaria.extraer(_dinero)
 		}
 	}
-	
+
 }
 
 // ESTRATEGIAS DE AHORRO
-
 object minimo {
-	
-	var calidad = 0
-	
-	method comprarViveres(_casa) {
-		if (not _casa.viveresSuficientes()) {
-			_casa.comprarViveres(self.porcentajeAComprar(_casa) * calidad)
-		} 
-		else {}
+
+	var property calidad = 0
+
+	method realizarMantenimiento() {
+		if (not casaDePepeYJulian.viveresSuficientes()) {
+			casaDePepeYJulian.comprarViveres(self.porcentajeAComprar())
+		}
 	}
-	
-	method porcentajeAComprar(_casa) {
-		return 40 - _casa.viveres()
+
+	method porcentajeAComprar() {
+		return 40 - casaDePepeYJulian.viveres()
 	}
-	
-	method calidad(_calidad) {
-		calidad = _calidad
-	}
-	
-	
 
 }
-
 
 object full {
-	
+
+	const property calidad = 5
+
+	method realizarMantenimiento() {
+		if (casaDePepeYJulian.estaEnOrden()) {
+			casaDePepeYJulian.comprarViveres(self.porcentajeALlenarViveres())
+			self.mantenimientoEnReparaciones()
+		} else {
+			casaDePepeYJulian.comprarViveres(40)
+			self.mantenimientoEnReparaciones()
+		}
+	}
+
+	method porcentajeALlenarViveres() {
+		return 100 - casaDePepeYJulian.viveres()
+	}
+
+	method mantenimientoEnReparaciones() {
+		if (self.alcanzaParaReparaciones()) {
+			casaDePepeYJulian.pagarReparaciones()
+		}
+	}
+
+	method alcanzaParaReparaciones() {
+		return (cuentasDePepeYJulian.cuentaParaGastos().dinero() - casaDePepeYJulian.gastoEnReparaciones()) > 1000
+	}
+
 }
+
