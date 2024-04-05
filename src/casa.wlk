@@ -3,6 +3,7 @@ object casaDePepeYJulian {
 
 	var viveres = 50
 	var gastoEnReparaciones = 0
+	var property cuentaAsignadaParaGastos = cuentaCorriente
 	var property estrategiaDeAhorro = full
 
 	method viveres() {
@@ -14,7 +15,11 @@ object casaDePepeYJulian {
 	}
 
 	method necesitaReparaciones() {
-		return gastoEnReparaciones > 0
+		return self.gastoEnReparaciones() > 0
+	}
+
+	method aumentaGastoEnReparaciones(monto) {
+		gastoEnReparaciones += monto
 	}
 
 	method gastoEnReparaciones(_gastoEnReparaciones) {
@@ -30,44 +35,21 @@ object casaDePepeYJulian {
 	}
 
 	method mantenerLaCasa() {
-		self.estrategiaDeAhorro().realizarMantenimiento()
+		self.estrategiaDeAhorro().realizarMantenimiento(self)
 	}
 
 	method comprarViveres(porcentaje) {
 		viveres += porcentaje
-		cuentasDePepeYJulian.extraerParaGastos(self.gastoEnViveres(porcentaje))
+		cuentaAsignadaParaGastos.extraer(self.dineroEnViveres(porcentaje))
 	}
 
-	method gastoEnViveres(porcentaje) {
+	method dineroEnViveres(porcentaje) {
 		return porcentaje * self.estrategiaDeAhorro().calidad()
 	}
 
 	method pagarReparaciones() {
-		cuentasDePepeYJulian.extraerParaGastos(gastoEnReparaciones)
+		cuentaAsignadaParaGastos.extraer(gastoEnReparaciones)
 		gastoEnReparaciones = 0
-	}
-
-}
-
-// CUENTA PEPE Y JULIAN
-object cuentasDePepeYJulian {
-
-	var cuentaParaGastos = cuentaCorriente
-
-	method cuentaParaGastos(_cuentaParaGastos) {
-		cuentaParaGastos = _cuentaParaGastos
-	}
-
-	method cuentaParaGastos() {
-		return cuentaParaGastos
-	}
-
-	method extraerParaGastos(_dinero) {
-		self.cuentaParaGastos().extraer(_dinero)
-	}
-
-	method depositarParaGastos(_dinero) {
-		self.cuentaParaGastos().depositar(_dinero)
 	}
 
 }
@@ -120,31 +102,27 @@ object cuentaGastos {
 
 object cuentaCombinada {
 
-	var cuentaPrimaria = cuentaCorriente
-	var cuentaSecundaria = cuentaGastos
+	var property cuentaPrimaria = cuentaCorriente
+	var property cuentaSecundaria = cuentaGastos
 
 	method dinero() {
 		return cuentaPrimaria.dinero() + cuentaSecundaria.dinero()
 	}
 
-	method cuentaPrimaria(_cuentaPrimaria) {
-		cuentaPrimaria = _cuentaPrimaria
-	}
-
-	method cuentaSecundaria(_cuentaSecundaria) {
-		cuentaSecundaria = _cuentaSecundaria
-	}
-
 	method depositar(_dinero) {
-		cuentaPrimaria.depositar(_dinero)
+		self.cuentaPrimaria().depositar(_dinero)
 	}
 
 	method extraer(_dinero) {
-		if (cuentaPrimaria.dinero() >= _dinero) {
-			cuentaPrimaria.extraer(_dinero)
+		if (self.sePuedeExtraerEnCuentaPrimaria(_dinero)) {
+			self.cuentaPrimaria().extraer(_dinero)
 		} else {
-			cuentaSecundaria.extraer(_dinero)
+			self.cuentaSecundaria().extraer(_dinero)
 		}
+	}
+	
+	method sePuedeExtraerEnCuentaPrimaria(_dinero) {
+		return self.cuentaPrimaria().dinero() >= _dinero
 	}
 
 }
@@ -154,14 +132,14 @@ object minimo {
 
 	var property calidad = 0
 
-	method realizarMantenimiento() {
-		if (not casaDePepeYJulian.viveresSuficientes()) {
-			casaDePepeYJulian.comprarViveres(self.porcentajeAComprar())
+	method realizarMantenimiento(casa) {
+		if (not casa.viveresSuficientes()) {
+			casa.comprarViveres(self.porcentajeAComprar(casa))
 		}
 	}
 
-	method porcentajeAComprar() {
-		return 40 - casaDePepeYJulian.viveres()
+	method porcentajeAComprar(casa) {
+		return 40 - casa.viveres()
 	}
 
 }
@@ -170,28 +148,86 @@ object full {
 
 	const property calidad = 5
 
-	method realizarMantenimiento() {
-		if (casaDePepeYJulian.estaEnOrden()) {
-			casaDePepeYJulian.comprarViveres(self.porcentajeALlenarViveres())
-			self.mantenimientoEnReparaciones()
+	method realizarMantenimiento(casa) {
+		if (casa.estaEnOrden()) {
+			casa.comprarViveres(self.porcentajeDeViveresALlenar(casa))
 		} else {
-			casaDePepeYJulian.comprarViveres(40)
-			self.mantenimientoEnReparaciones()
+			casa.comprarViveres(40)
+		}
+		self.mantenimientoEnReparaciones(casa)
+	}
+
+	method porcentajeDeViveresALlenar(casa) {
+		return 100 - casa.viveres()
+	}
+
+	method mantenimientoEnReparaciones(casa) {
+		if (self.alcanzaParaReparaciones(casa)) {
+			casa.pagarReparaciones()
 		}
 	}
 
-	method porcentajeALlenarViveres() {
-		return 100 - casaDePepeYJulian.viveres()
+	method alcanzaParaReparaciones(casa) {
+		return (casa.cuentaAsignadaParaGastos().dinero() - casa.gastoEnReparaciones()) > 1000
 	}
 
-	method mantenimientoEnReparaciones() {
-		if (self.alcanzaParaReparaciones()) {
-			casaDePepeYJulian.pagarReparaciones()
-		}
+}
+
+// Si se agregan mas casas no es posible usar las estrategias de ahorro.
+// Se podrian usar si en los metodos se usaria un parámetro casa (algo mas general) en vez de 
+// invocar a una sola casa casaDePepeYJulian. 
+// LA CASA DE PEPITA
+object casaDePepita {
+
+	var viveres = 70
+	var gastoEnReparaciones = 100
+	const property cuentaAsignadaParaGastos = cuentaCorriente
+	var property estrategiaDeAhorro = minimo
+
+	method viveres() {
+		return viveres
 	}
 
-	method alcanzaParaReparaciones() {
-		return (cuentasDePepeYJulian.cuentaParaGastos().dinero() - casaDePepeYJulian.gastoEnReparaciones()) > 1000
+	method viveresSuficientes() {
+		return self.viveres() > 40
+	}
+
+	method necesitaReparaciones() {
+		return self.gastoEnReparaciones() > 0
+	}
+
+	method aumentaGastoEnReparaciones(monto) {
+		gastoEnReparaciones += monto
+	}
+
+	method gastoEnReparaciones(_gastoEnReparaciones) {
+		gastoEnReparaciones = _gastoEnReparaciones
+	}
+
+	method gastoEnReparaciones() {
+		return gastoEnReparaciones
+	}
+
+	method estaEnOrden() {
+		return self.viveresSuficientes() and not self.necesitaReparaciones()
+	}
+
+	method mantenerLaCasa() {
+		self.estrategiaDeAhorro().realizarMantenimiento(self)
+	}
+
+	method comprarViveres(porcentaje) {
+		viveres += porcentaje
+		cuentaAsignadaParaGastos.extraer(self.dineroEnViveres(porcentaje))
+	}
+
+	method dineroEnViveres(porcentaje) {
+		return porcentaje * self.estrategiaDeAhorro().calidad()
+	}
+
+	method pagarReparaciones() {
+		cuentaAsignadaParaGastos.extraer(gastoEnReparaciones)
+		gastoEnReparaciones = 0
 	}
 
 }

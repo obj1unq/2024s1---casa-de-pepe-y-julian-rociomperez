@@ -2,7 +2,7 @@ import casa.*
 
 test " Aumenta el monto de reparación a $1000: hay víveres suficientes, hay que hacer reparaciones 
 y la casa no está en orden" {
-	casaDePepeYJulian.gastoEnReparaciones(1000)
+	casaDePepeYJulian.aumentaGastoEnReparaciones(1000)
 	assert.equals(true, casaDePepeYJulian.viveresSuficientes())
 	assert.equals(true, casaDePepeYJulian.necesitaReparaciones())
 	assert.equals(false, casaDePepeYJulian.estaEnOrden())
@@ -32,7 +32,7 @@ test "Cuenta combinada, la primaria cuenta Gastos y la secundaria cuenta corrien
 test "Mantenimiento de la casa de Pepe y Julian con estrategia full" {
 	//Inicia necesitando $100 para reparaciones, tiene asociada la cuenta corriente con $1000.
 	casaDePepeYJulian.gastoEnReparaciones(100)
-	cuentasDePepeYJulian.cuentaParaGastos(cuentaCorriente)
+	casaDePepeYJulian.cuentaAsignadaParaGastos(cuentaCorriente)
 	cuentaCorriente.dinero(1000)
 	casaDePepeYJulian.estrategiaDeAhorro(full)
 	casaDePepeYJulian.mantenerLaCasa()	
@@ -41,5 +41,15 @@ test "Mantenimiento de la casa de Pepe y Julian con estrategia full" {
 	assert.equals(800, cuentaCorriente.dinero())
 }
 
-
+test "Mantenimiento de la casa de Pepita" {
+	// Se depositan 1000 a la cuenta asignada, paga gastos en reparaciones 
+	// y realiza matenimiento con estrategia full.
+	casaDePepita.cuentaAsignadaParaGastos().depositar(1000)
+	casaDePepita.pagarReparaciones()
+	casaDePepita.estrategiaDeAhorro(full)
+	casaDePepita.mantenerLaCasa()	
+	assert.equals(100, casaDePepita.viveres())
+	assert.equals(0, casaDePepita.gastoEnReparaciones())
+	assert.equals(750, casaDePepita.cuentaAsignadaParaGastos().dinero())
+}
 
