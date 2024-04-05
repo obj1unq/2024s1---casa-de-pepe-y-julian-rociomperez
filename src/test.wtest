@@ -1,0 +1,55 @@
+import casa.*
+
+test " Aumenta el monto de reparación a $1000: hay víveres suficientes, hay que hacer reparaciones 
+y la casa no está en orden" {
+	casaDePepeYJulian.aumentaGastoEnReparaciones(1000)
+	assert.equals(true, casaDePepeYJulian.viveresSuficientes())
+	assert.equals(true, casaDePepeYJulian.necesitaReparaciones())
+	assert.equals(false, casaDePepeYJulian.estaEnOrden())
+}
+
+test "Cuenta inicia en $0, costo por operación $20, deposita $1000, saldo queda en $980." {
+	cuentaGastos.costoDeOperacion(20)
+	cuentaGastos.depositar(1000)
+	assert.equals(980, cuentaGastos.dinero())
+}
+
+test "Cuenta combinada, la primaria cuenta Gastos y la secundaria cuenta corriente" {
+	// costo de operación $50 y la cuenta corriente inicia con $500 de saldo.
+	cuentaCombinada.cuentaPrimaria(cuentaGastos)
+	cuentaGastos.costoDeOperacion(50)
+	cuentaCombinada.cuentaSecundaria(cuentaCorriente)
+	cuentaCorriente.dinero(500)
+	// Se depositan $100 en la cuenta combinada.
+	cuentaCombinada.depositar(100)
+	// Se extraen $200 en la cuenta combinada.
+	cuentaCombinada.extraer(200)
+	assert.equals(50, cuentaGastos.dinero())
+	assert.equals(300, cuentaCorriente.dinero())
+	assert.equals(350, cuentaCombinada.dinero())
+}
+
+test "Mantenimiento de la casa de Pepe y Julian con estrategia full" {
+	//Inicia necesitando $100 para reparaciones, tiene asociada la cuenta corriente con $1000.
+	casaDePepeYJulian.gastoEnReparaciones(100)
+	casaDePepeYJulian.cuentaAsignadaParaGastos(cuentaCorriente)
+	cuentaCorriente.dinero(1000)
+	casaDePepeYJulian.estrategiaDeAhorro(full)
+	casaDePepeYJulian.mantenerLaCasa()	
+	assert.equals(90, casaDePepeYJulian.viveres())
+	assert.equals(100, casaDePepeYJulian.gastoEnReparaciones())
+	assert.equals(800, cuentaCorriente.dinero())
+}
+
+test "Mantenimiento de la casa de Pepita" {
+	// Se depositan 1000 a la cuenta asignada, paga gastos en reparaciones 
+	// y realiza matenimiento con estrategia full.
+	casaDePepita.cuentaAsignadaParaGastos().depositar(1000)
+	casaDePepita.pagarReparaciones()
+	casaDePepita.estrategiaDeAhorro(full)
+	casaDePepita.mantenerLaCasa()	
+	assert.equals(100, casaDePepita.viveres())
+	assert.equals(0, casaDePepita.gastoEnReparaciones())
+	assert.equals(750, casaDePepita.cuentaAsignadaParaGastos().dinero())
+}
+
